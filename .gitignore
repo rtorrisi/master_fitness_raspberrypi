@@ -1,6 +1,6 @@
 __pycache__/
 *.py[cod]
 
-firebase_config.txt
+config_file.txt
 
 storage_data/
