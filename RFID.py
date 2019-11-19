@@ -33,7 +33,7 @@ class SerialParser:
         return None
 
 class RFIDReader:
-    def __init__(self, serial_port):
+    def __init__(self, serial_port, handler_function):
         self.serial = serial.Serial()
         self.serial.port = serial_port
         self.serial.timeout = 3
@@ -45,7 +45,7 @@ class RFIDReader:
             sys.exit(1)
 
         print("Listening on serial port: ", self.serial.portstr)
-        self.parser = SerialParser(handler=self.handler)
+        self.parser = SerialParser(handler=handler_function)
         
     def start(self):
         self.alive = True
@@ -59,9 +59,6 @@ class RFIDReader:
             self.alive = False
             self.thread.join()
             self.serial.close()
-
-    def handler(self, card_no, state):
-        print("handler : card %s (%u)" % (card_no, state))
         
     def reader(self):
         print('RFIDReader thread started')
