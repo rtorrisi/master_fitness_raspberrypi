@@ -3,4 +3,4 @@ __pycache__/
 
 config_file.txt
 
-storage_data/
+storage_data/*
