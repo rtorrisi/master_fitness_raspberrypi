@@ -11,6 +11,8 @@ from kivy.properties import StringProperty, NumericProperty
 from kivy.graphics import Rectangle, Color
 from kivy.clock import Clock
 
+from os import path
+
 class BarPanel(BoxLayout):
     def __init__(self,**kwargs):
         super(BarPanel, self).__init__(**kwargs)
@@ -38,6 +40,7 @@ class ViewerScreen(Screen):
         
         self.event = None
         self.user_data = None
+        self.page = 0
         self.saveUserDataCallback = None
         self.timeout = 20
 
@@ -72,6 +75,28 @@ class ViewerScreen(Screen):
             border=(0,0,0,0),
             on_press=self.on_press_close_button,
             on_release=self.on_release_close_button
+        )
+        self.left_button = Button(
+            size_hint=(None, None),
+            width=70,
+            height=70,
+            valign='center',
+            halign='center',
+            background_normal='app_data/left_normal.png',
+            background_down='app_data/left_down.png',
+            border=(0,0,0,0),
+            on_release=self.on_release_left_button
+        )
+        self.right_button = Button(
+            size_hint=(None, None),
+            width=70,
+            height=70,
+            valign='center',
+            halign='center',
+            background_normal='app_data/right_normal.png',
+            background_down='app_data/right_down.png',
+            border=(0,0,0,0),
+            on_release=self.on_release_right_button
         )
         anchor_layout1 = AnchorLayout(
 			#orientation='horizontal',
@@ -109,6 +134,8 @@ class ViewerScreen(Screen):
 
         bar_panel.add_widget(image)
         bar_panel.add_widget(self.label)
+        bar_panel.add_widget(self.left_button)
+        bar_panel.add_widget(self.right_button)
         bar_panel.add_widget(self.close_button)
         self.scrollview.add_widget(self.img_view)
         anchor_layout1.add_widget(self.scrollview)
@@ -127,7 +154,7 @@ class ViewerScreen(Screen):
     def on_pre_leave(self):
         Clock.unschedule(self.event)
         if self.saveUserDataCallback and self.user_data :
-            self.saveUserDataCallback(self.user_data['rfid'], {"slider": self.slider_value})
+            self.saveUserDataCallback(self.user_data['rfid'], {"slider": self.slider_value, "page":self.page})
 
     def go_to_home(self, *largs):
         self.manager.current = 'home'
@@ -149,9 +176,24 @@ class ViewerScreen(Screen):
     def on_release_close_button(self, instance):
         self.go_to_home()
 
+    def on_release_left_button(self, instance):
+        self.reschedule()
+        page=self.page-1
+        if path.isfile("storage_data/"+str(self.user_data['rfid'])+"_"+str(page)+".jpg"):
+            self.page=page
+            self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"_"+str(self.page)+".jpg")
+            self.slider_value = 1
+
+    def on_release_right_button(self, instance):
+        self.reschedule()
+        page=self.page+1
+        if path.isfile("storage_data/"+str(self.user_data['rfid'])+"_"+str(page)+".jpg"):
+            self.page=page
+            self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"_"+str(self.page)+".jpg")
+            self.slider_value = 1
+
     def on_src(self, instance, value):
         self.img_view.source = value
-        self.img_view.reload()
 
     def on_label_text(self, instance, value):
         self.label.text = value
@@ -172,8 +214,10 @@ class ViewerScreen(Screen):
 
         if not self.user_data or self.user_data['rfid'] != user_data['rfid']:
             if self.user_data and self.user_data['rfid'] != user_data['rfid']:
-                self.saveUserDataCallback(self.user_data['rfid'], {"slider":  self.slider_value})
+                self.saveUserDataCallback(self.user_data['rfid'], {"slider":  self.slider_value, "page": self.page})
             self.user_data = user_data
+            self.page = self.user_data['page']
+            self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"_"+str(self.page)+".jpg")
             self.slider_value = self.user_data['slider']
             self.label_text = "Scheda di "+self.user_data['name']+" "+self.user_data['surname']
 

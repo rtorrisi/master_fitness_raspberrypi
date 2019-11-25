@@ -22,14 +22,14 @@ from config import config
 class WorkoutPlansManager:
 	def __init__(self, screen_manager, home_screen, viewer_screen):
 		self.firebase = Firebase(config)
-		self.rfidReader = RFIDReader('COM4', handler_function=self.handler)
+		self.rfidReader = RFIDReader('/dev/ttyUSB0', handler_function=self.handler)
+		#self.rfidReader = RFIDReader('COM4', handler_function=self.handler)
 		self.home_screen = home_screen
 		self.viewer_screen = viewer_screen
 		self.screen_manager = screen_manager		
 
-	def loadViewer(self, destination_path, user_data):
+	def loadViewer(self, user_data):
 		Clock.schedule_once(partial(self.viewer_screen.setUserData, self.saveUserData, user_data))
-		Clock.schedule_once(partial(self.viewer_screen.setSourcePath, destination_path))
 		Clock.schedule_once(partial(self.home_screen.setBarValue, 100))
 		self.screen_manager.current = 'viewer'
 
@@ -39,7 +39,7 @@ class WorkoutPlansManager:
 	def loadUserData(self, card_no):
 		Clock.schedule_once(partial(self.home_screen.setBarVisibility, True))
 		source_path = "users/"+card_no+"/scheda.jpg"
-		destination_path = "storage_data/"+card_no+".jpg"
+		destination_path = "storage_data/"+card_no+"_0.jpg"
 		Clock.schedule_once(partial(self.home_screen.setBarValue, 25))
 		if not path.isfile(destination_path):
 			self.firebase.downloadFile(source_path, destination_path)
@@ -50,14 +50,14 @@ class WorkoutPlansManager:
 		user_data = self.firebase.get("users/"+card_no).val()
 		Clock.schedule_once(partial(self.home_screen.setBarValue, 75))
 		
-		return destination_path, user_data
+		return user_data
 
 	def handler(self, card_no, state):
 		print("handler -> card %s (%u)" % (card_no, state))
 		
 		if state:
-			file_path, user_data = self.loadUserData(card_no) 
-			self.loadViewer(file_path, user_data)
+			user_data = self.loadUserData(card_no) 
+			self.loadViewer(user_data)
 
 	def run(self):
 		self.rfidReader.start()
