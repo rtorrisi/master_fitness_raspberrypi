@@ -4,10 +4,15 @@ from HomeScreen import HomeScreen
 from ViewerScreen import ViewerScreen
 from os import path, environ
 from functools import partial 
-#environ["KIVY_NO_CONSOLELOG"] = "1"
+environ["KIVY_NO_CONSOLELOG"] = "1"
 
 import kivy
 kivy.require('1.11.1')
+
+from kivy.config import Config
+Config.set('graphics', 'width', '1024')
+Config.set('graphics', 'height', '600')
+
 from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition
 from kivy.app import App
 from kivy.clock import Clock
@@ -17,28 +22,42 @@ from config import config
 class WorkoutPlansManager:
 	def __init__(self, screen_manager, home_screen, viewer_screen):
 		self.firebase = Firebase(config)
-		self.rfidReader = RFIDReader('/dev/ttyUSB0', handler_function=self.handler)
+		self.rfidReader = RFIDReader('COM4', handler_function=self.handler)
 		self.home_screen = home_screen
 		self.viewer_screen = viewer_screen
 		self.screen_manager = screen_manager		
+
+	def loadViewer(self, destination_path, user_data):
+		Clock.schedule_once(partial(self.viewer_screen.setUserData, self.saveUserData, user_data))
+		Clock.schedule_once(partial(self.viewer_screen.setSourcePath, destination_path))
+		Clock.schedule_once(partial(self.home_screen.setBarValue, 100))
+		self.screen_manager.current = 'viewer'
+
+	def saveUserData(self, card_no, data):
+		self.firebase.update("users/"+card_no, data)
+
+	def loadUserData(self, card_no):
+		Clock.schedule_once(partial(self.home_screen.setBarVisibility, True))
+		source_path = "users/"+card_no+"/scheda.jpg"
+		destination_path = "storage_data/"+card_no+".jpg"
+		Clock.schedule_once(partial(self.home_screen.setBarValue, 25))
+		if not path.isfile(destination_path):
+			self.firebase.downloadFile(source_path, destination_path)
+		else:
+			print("file exists")
+
+		Clock.schedule_once(partial(self.home_screen.setBarValue, 50))
+		user_data = self.firebase.get("users/"+card_no).val()
+		Clock.schedule_once(partial(self.home_screen.setBarValue, 75))
+		
+		return destination_path, user_data
 
 	def handler(self, card_no, state):
 		print("handler -> card %s (%u)" % (card_no, state))
 		
 		if state:
-			destination_path = "storage_data/"+card_no+".jpg"
-			if not path.isfile(destination_path):
-				Clock.schedule_once(partial(self.home_screen.setBarVisibility, True))
-				Clock.schedule_once(partial(self.home_screen.setBarValue, 50))
-				source_path = "users/"+card_no+"/scheda.jpg"
-				self.firebase.downloadFile(source_path, destination_path)
-				print("downloaded")	
-				Clock.schedule_once(partial(self.home_screen.setBarValue, 100))
-			else:
-				print("file exists")
-			
-			Clock.schedule_once(partial(self.viewer_screen.setSourcePath, destination_path))
-			self.screen_manager.current = 'viewer'
+			file_path, user_data = self.loadUserData(card_no) 
+			self.loadViewer(file_path, user_data)
 
 	def run(self):
 		self.rfidReader.start()

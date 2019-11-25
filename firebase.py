@@ -17,3 +17,9 @@ class Firebase:
 
     def downloadFile(self, source_path, destination_path):
         self.storage.child(source_path).download(destination_path)
+
+    def get(self, source_path):
+        return self.database.child(source_path).get()
+
+    def update(self, source_path, data):
+        self.database.child(source_path).update(data)

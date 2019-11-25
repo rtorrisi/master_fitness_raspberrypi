@@ -1,20 +1,19 @@
 from kivy.uix.screenmanager import Screen
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.slider import Slider
 from kivy.uix.image import Image
 from kivy.uix.button import Button
-from kivy.properties import StringProperty
+from kivy.properties import StringProperty, NumericProperty
 from kivy.graphics import Rectangle, Color
 from kivy.clock import Clock
 
-from functools import partial 
-
-class LeftPanel(StackLayout):
+class BarPanel(BoxLayout):
     def __init__(self,**kwargs):
-        super(LeftPanel, self).__init__(**kwargs)
+        super(BarPanel, self).__init__(**kwargs)
         with self.canvas:
             Color(0, 0, 0, 0.5)
             self.bg = Rectangle(pos=self.pos, size=self.size)
@@ -27,6 +26,8 @@ class LeftPanel(StackLayout):
 
 class ViewerScreen(Screen):
     src = StringProperty("")
+    label_text = StringProperty("")
+    slider_value = NumericProperty(1)
     
     def __init__(self,**kwargs):
         super(ViewerScreen, self).__init__(**kwargs)
@@ -36,113 +37,127 @@ class ViewerScreen(Screen):
         self.bind(size=self.update_bg)
         
         self.event = None
-        self.timeout = 5
+        self.user_data = None
+        self.saveUserDataCallback = None
+        self.timeout = 20
 
-        boxlayout = BoxLayout(
-			orientation='horizontal'
+        box_layout = BoxLayout(
+			orientation='vertical'
 		)
-        leftpanel = LeftPanel(
-			orientation='tb-lr',
-            size_hint=(0.2, 1),
-			padding=15
-        )
-        image = Image(
+        bar_panel = BarPanel(
+			orientation='horizontal',
             size_hint=(1, None),
-            height=200,
+            height=80,
+			padding=7
+		)
+        image = Image(
+            size_hint=(None, 1),
+            width=150,
             source='app_data/master_fitness_logo_w_noaddr.png'
         )
-        label1 = Label(
-            size_hint=(1, None),
-            height=50,
-            halign='left',
-            text='Scheda di Allenamento',
-            font_size=25
-        )
-        label2 = Label(
-            size_hint=(1, None),
-            height=50,
-            halign='left',
-            text='Riccardo Torrisi',
-            font_size=20
-        )
-        button_container = BoxLayout(
-            size_hint=(1, 0.67)
+        self.label = Label(
+            size_hint=(1, 1),
+            font_size=30,
+            italic=True,
+            text=self.label_text
         )
         self.close_button = Button(
-            size_hint=(1, None),
-            height=50,
-            background_normal='',
-            background_color= (.04, .85, .9, 1),
-            text='Chiudi',
+            size_hint=(None, None),
+            width=70,
+            height=70,
+            valign='center',
+            halign='center',
+            background_normal='app_data/close_normal.png',
+            background_down='app_data/close_down.png',
+            border=(0,0,0,0),
             on_press=self.on_press_close_button,
             on_release=self.on_release_close_button
         )
+        anchor_layout1 = AnchorLayout(
+			#orientation='horizontal',
+            size_hint=(1, 0.8),
+            anchor_x='right'
+		)
+        anchor_layout2 = AnchorLayout(
+			#orientation='horizontal',
+            size_hint=(1, 0.8),
+            anchor_x='right'
+		)
         self.scrollview = ScrollView(
-            size_hint=(0.75, 1)
+            size_hint=(1, 1),
+            bar_color=[0,0,0,0],
+            bar_inactive_color=[0,0,0,0]
         )
-        slider = Slider(
+        self.slider = Slider(
             orientation='vertical',
-            size_hint=(0.05, 0.99),
-            min=0, max=1, step=0.01, value=1
+            size_hint=(None, 1),
+            width=50,
+            min=0, max=1, step=0.01, value=self.slider_value,
+            cursor_image='app_data/kettlebell.png',
+            cursor_size=('45sp', '45sp'),
+            background_vertical='app_data/slider.png',
+            background_width='3sp',
+            padding='30sp'
         )
-        self.scrollview.bind(scroll_y=partial(self.slider_change, slider))
-        slider.bind(value=partial(self.scroll_change, self.scrollview))
-
+        self.scrollview.bind(scroll_y=self.slider_change)
+        self.slider.bind(value=self.scroll_change)
         self.img_view = Image(
             size_hint=(1, None),
-            height=8770,
+            height=7200,
             source=self.src
         )
 
-        leftpanel.add_widget(image)
-        leftpanel.add_widget(label1)
-        leftpanel.add_widget(label2)
-        button_container.add_widget(self.close_button)
-        leftpanel.add_widget(button_container)
+        bar_panel.add_widget(image)
+        bar_panel.add_widget(self.label)
+        bar_panel.add_widget(self.close_button)
         self.scrollview.add_widget(self.img_view)
-        boxlayout.add_widget(leftpanel)
-        boxlayout.add_widget(self.scrollview)
-        boxlayout.add_widget(slider)
-        self.add_widget(boxlayout)
+        anchor_layout1.add_widget(self.scrollview)
+        anchor_layout1.add_widget(self.slider)
+        box_layout.add_widget(bar_panel)
+        box_layout.add_widget(anchor_layout1)
+        self.add_widget(box_layout)
 
     def reschedule(self):
-        if self.event:
-            Clock.unschedule(self.event)
+        Clock.unschedule(self.event)
         self.event = Clock.schedule_once(self.go_to_home, self.timeout)
 
     def on_enter(self):
-        self.scrollview.scroll_y = 1
-        self.event = Clock.schedule_once(self.go_to_home, self.timeout)
+        pass
 
     def on_pre_leave(self):
-        print(self.scrollview.scroll_y)
-        if self.event:
-            Clock.unschedule(self.event)
+        Clock.unschedule(self.event)
+        if self.saveUserDataCallback and self.user_data :
+            self.saveUserDataCallback(self.user_data['rfid'], {"slider": self.slider_value})
 
     def go_to_home(self, *largs):
         self.manager.current = 'home'
 
-    def scroll_change(self, scrlv, instance, value):
-        scrlv.scroll_y = value
+    def scroll_change(self, instance, value):
+        self.slider_value = value
+        self.scrollview.scroll_y = value
         self.reschedule()
 
-    def slider_change(self, slider, instance, value):
+    def slider_change(self, instance, value):
         if value >= 0:
         #this to avoid 'maximum recursion depth exceeded' error
-            slider.value=value
+            self.slider_value = value
             self.reschedule()
 
     def on_press_close_button(self, instance):
-        self.close_button.background_color = (.05, 0.86, .91, 1)
-        self.go_to_home()
+        pass
 
     def on_release_close_button(self, instance):
-        self.close_button.background_color = (.04, 0.85, .9, 1)
-
+        self.go_to_home()
 
     def on_src(self, instance, value):
         self.img_view.source = value
         self.img_view.reload()
+
+    def on_label_text(self, instance, value):
+        self.label.text = value
+
+    def on_slider_value(self, isinstance, value):
+        self.slider.value = value
 
     def update_bg(self, *args):
         self.bg.pos = self.pos
@@ -150,3 +165,16 @@ class ViewerScreen(Screen):
 
     def setSourcePath(self, path, *largs):
         self.src = path
+
+    def setUserData(self, saveUserDataFunc, user_data, *largs):
+        if not self.saveUserDataCallback:
+            self.saveUserDataCallback = saveUserDataFunc
+
+        if not self.user_data or self.user_data['rfid'] != user_data['rfid']:
+            if self.user_data and self.user_data['rfid'] != user_data['rfid']:
+                self.saveUserDataCallback(self.user_data['rfid'], {"slider":  self.slider_value})
+            self.user_data = user_data
+            self.slider_value = self.user_data['slider']
+            self.label_text = "Scheda di "+self.user_data['name']+" "+self.user_data['surname']
+
+        self.reschedule()

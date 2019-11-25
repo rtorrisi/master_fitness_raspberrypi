@@ -13,31 +13,40 @@ class HomeScreen(Screen):
 	def __init__(self,**kwargs):
 		super(HomeScreen, self).__init__(**kwargs)
 		with self.canvas:
-			self.bg = Rectangle(source='app_data/background.jpg', pos=self.pos, size=self.size)
+			self.bg = Rectangle(source='app_data/background_home.jpg', pos=self.pos, size=self.size)
 		self.bind(pos=self.update_bg)
 		self.bind(size=self.update_bg)
 
 		boxlayout = BoxLayout(
-			orientation='vertical'
+			orientation='vertical',
+			padding=30
 		)
-		image = Image(
-			size_hint=(1, 0.8),
+		logo = Image(
+			size_hint=(1, 1),
 			source='app_data/master_fitness_logo_w.png'
+		)
+		img_RFID = Image(
+			size_hint=(1, 0.6),
+			source='app_data/rfid.png'
 		)
 		anchorlayout = AnchorLayout(
 			size_hint=(1, 0.2),
-			anchor_y='top'
+			anchor_y='center'
 		)
 		self.progressbar = ProgressBar(
 			size_hint=(0.8, None),
 			value=0, opacity=0
 		)
-
 		anchorlayout.add_widget(self.progressbar)
-		boxlayout.add_widget(image)
+		boxlayout.add_widget(logo)
 		boxlayout.add_widget(anchorlayout)
+		boxlayout.add_widget(img_RFID)
 		self.add_widget(boxlayout)
 	
+	def on_enter(self):
+		self.bar_visibility = False
+		self.bar_value = 0
+
 	def on_leave(self):
 		self.bar_visibility = False
 		self.bar_value = 0
