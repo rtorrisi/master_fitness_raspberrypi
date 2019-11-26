@@ -128,7 +128,8 @@ class ViewerScreen(Screen):
         self.slider.bind(value=self.scroll_change)
         self.img_view = Image(
             size_hint=(1, None),
-            height=7200,
+            height=1754,
+			nocache=True,
             source=self.src
         )
 

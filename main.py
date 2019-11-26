@@ -42,22 +42,29 @@ class WorkoutPlansManager:
 		destination_path = "storage_data/"+card_no+"_0.jpg"
 		Clock.schedule_once(partial(self.home_screen.setBarValue, 25))
 		if not path.isfile(destination_path):
-			self.firebase.downloadFile(source_path, destination_path)
+			image_res = self.firebase.downloadFile(source_path, destination_path)
 		else:
 			print("file exists")
 
 		Clock.schedule_once(partial(self.home_screen.setBarValue, 50))
 		user_data = self.firebase.get("users/"+card_no).val()
 		Clock.schedule_once(partial(self.home_screen.setBarValue, 75))
-		
+
 		return user_data
 
 	def handler(self, card_no, state):
 		print("handler -> card %s (%u)" % (card_no, state))
 		
 		if state:
-			user_data = self.loadUserData(card_no) 
-			self.loadViewer(user_data)
+			user_data = self.loadUserData(card_no)
+			if not user_data:
+				print("user not exists")
+				Clock.schedule_once(partial(self.home_screen.setBarVisibility, False))
+				Clock.schedule_once(partial(self.home_screen.setBarValue, 0))
+			else:
+				self.loadViewer(user_data)
+	
+			
 
 	def run(self):
 		self.rfidReader.start()
