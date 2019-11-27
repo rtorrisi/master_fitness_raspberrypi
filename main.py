@@ -52,7 +52,7 @@ class WorkoutPlansManager:
 		return user_data
 
 	def handler(self, card_no):
-		print("handler -> card %s (%u)" % (card_no, state))
+		print("handler -> card %s" % card_no)
 		
 		user_data = self.loadUserData(card_no)
 		if not user_data:
@@ -61,14 +61,12 @@ class WorkoutPlansManager:
 			Clock.schedule_once(partial(self.home_screen.setBarValue, 0))
 		else:
 			self.loadViewer(user_data)
-	
-			
 
 	def run(self):
 		self.rfidReader.start()
-		
+
 	def stop(self):
-		self.rfidReader.stop()		
+		self.rfidReader.stop()
 
 
 screen_manager = ScreenManager(transition=NoTransition())
@@ -85,7 +83,7 @@ class TestApp(App):
 		self.WPM.run()
 		return screen_manager
 
-	def stop(self):
+	def __del__(self):
 		self.WPM.stop()
 
 
