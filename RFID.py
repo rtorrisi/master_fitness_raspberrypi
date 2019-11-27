@@ -1,50 +1,46 @@
 import sys
 import threading
-import serial
+import RPi.GPIO as GPIO
+from mfrc522 import SimpleMFRC522
 
 class SerialParser:
-    (S_WAIT_START, S_READING, S_CARDNO_READ) = range(3)
     (OFF, ON) = range(2)
 
     def __init__(self, handler):
         self.handler = handler
         self.reset()
 
+    def int2bytes(self, i, enc):
+        return i.to_bytes((i.bit_length()+7) // 8, enc)
+
+    def convert_hex(self, str, enc1, enc2):
+        return int2bytes(int.from_bytes(bytes.fromhex(str), enc1), enc2).hex()
+
     def reset(self):
-        self.state = self.S_WAIT_START
+        self.state = self.OFF
         self.card_no = 0
+        self.card_off_count = 0
 
-    def input(self, byte):
-        byte_hex = byte.hex()
-        # '02' start of text 
-        if self.state == self.S_WAIT_START and byte_hex == '02':
-            self.state = self.S_READING       
-        elif self.state == self.S_READING:
-             # '0d' carriage return, '0a' line feed 
-            if byte_hex != '0d' and byte_hex != '0a':
-                self.card_no = (self.card_no * 10) + int(byte)
+    def input(self, data):
+        if self.state == self.ON:
+            if data:
+                self.card_off_count = 0
             else:
-                self.handler(str(self.card_no).zfill(14), self.ON)
-                self.state = self.S_CARDNO_READ        
-        # '1b' ESC
-        elif self.state == self.S_CARDNO_READ and byte_hex == '1b':
-            self.handler(str(self.card_no).zfill(14), self.OFF)
-            self.reset()
-        return None
-
+                self.card_off_count += 1
+            if self.card_off_count == 4
+                print("CARD OFF")
+                self.state = self.OFF
+                self.card_off_count = 0
+            
+        elif self.state == self.OFF and data:
+            print("CARD ON")
+            self.state = self.ON
+            card_no = int(convert_hex(hex(id)[2:-2], 'big', 'little'), 16)
+            self.handler(str(self.card_no).zfill(14))            
+            
 class RFIDReader:
-    def __init__(self, serial_port, handler_function):
-        self.serial = serial.Serial()
-        self.serial.port = serial_port
-        self.serial.timeout = 3
-
-        try:
-            self.serial.open()
-        except serial.SerialException as e:
-            print("Could not open serial port %s: %s" % (self.serial.portstr, e))
-            sys.exit(1)
-
-        print("Listening on serial port: ", self.serial.portstr)
+    def __init__(self, handler_function):
+        self.RC522 = SimpleMFRC522()
         self.parser = SerialParser(handler=handler_function)
         
     def start(self):
@@ -58,12 +54,12 @@ class RFIDReader:
         if self.alive:
             self.alive = False
             self.thread.join()
-            self.serial.close()
+            GPIO.cleanup()
         
     def reader(self):
         print('RFIDReader thread started')
         while self.alive:
-            data = self.serial.read(1)            
+            data = self.RC522.read_id_no_block()            
             self.parser.input(data) # blocks on read
         self.alive = False
         print('RFIDReader thread terminated')

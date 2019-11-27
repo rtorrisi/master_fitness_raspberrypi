@@ -22,8 +22,7 @@ from config import config
 class WorkoutPlansManager:
 	def __init__(self, screen_manager, home_screen, viewer_screen):
 		self.firebase = Firebase(config)
-		self.rfidReader = RFIDReader('/dev/ttyUSB0', handler_function=self.handler)
-		#self.rfidReader = RFIDReader('COM4', handler_function=self.handler)
+		self.rfidReader = RFIDReader(handler_function=self.handler)
 		self.home_screen = home_screen
 		self.viewer_screen = viewer_screen
 		self.screen_manager = screen_manager		
@@ -52,17 +51,16 @@ class WorkoutPlansManager:
 
 		return user_data
 
-	def handler(self, card_no, state):
+	def handler(self, card_no):
 		print("handler -> card %s (%u)" % (card_no, state))
 		
-		if state:
-			user_data = self.loadUserData(card_no)
-			if not user_data:
-				print("user not exists")
-				Clock.schedule_once(partial(self.home_screen.setBarVisibility, False))
-				Clock.schedule_once(partial(self.home_screen.setBarValue, 0))
-			else:
-				self.loadViewer(user_data)
+		user_data = self.loadUserData(card_no)
+		if not user_data:
+			print("user not exists")
+			Clock.schedule_once(partial(self.home_screen.setBarVisibility, False))
+			Clock.schedule_once(partial(self.home_screen.setBarValue, 0))
+		else:
+			self.loadViewer(user_data)
 	
 			
 
