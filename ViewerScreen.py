@@ -10,7 +10,7 @@ from kivy.uix.button import Button
 from kivy.properties import StringProperty, NumericProperty
 from kivy.graphics import Rectangle, Color
 from kivy.clock import Clock
-
+from kivy.effects.scroll import ScrollEffect
 from os import path
 
 class BarPanel(BoxLayout):
@@ -41,6 +41,7 @@ class ViewerScreen(Screen):
         self.event = None
         self.user_data = None
         self.page = 0
+        self.num_pages = 0
         self.saveUserDataCallback = None
         self.timeout = 20
 
@@ -63,6 +64,12 @@ class ViewerScreen(Screen):
             font_size=30,
             italic=True,
             text=self.label_text
+        )
+        self.labelPage = Label(
+            size_hint=(None, 1),
+            width=50,
+            font_size=30,
+            italic=True
         )
         self.close_button = Button(
             size_hint=(None, None),
@@ -98,20 +105,15 @@ class ViewerScreen(Screen):
             border=(0,0,0,0),
             on_release=self.on_release_right_button
         )
-        anchor_layout1 = AnchorLayout(
-			#orientation='horizontal',
-            size_hint=(1, 0.8),
-            anchor_x='right'
-		)
-        anchor_layout2 = AnchorLayout(
-			#orientation='horizontal',
-            size_hint=(1, 0.8),
+        anchor_layout = AnchorLayout(
+			size_hint=(1, 0.8),
             anchor_x='right'
 		)
         self.scrollview = ScrollView(
             size_hint=(1, 1),
             bar_color=[0,0,0,0],
-            bar_inactive_color=[0,0,0,0]
+            bar_inactive_color=[0,0,0,0],
+            effect_cls=ScrollEffect
         )
         self.slider = Slider(
             orientation='vertical',
@@ -128,7 +130,7 @@ class ViewerScreen(Screen):
         self.slider.bind(value=self.scroll_change)
         self.img_view = Image(
             size_hint=(1, None),
-            height=1754,
+            height=1450,
 			nocache=True,
             source=self.src
         )
@@ -136,13 +138,14 @@ class ViewerScreen(Screen):
         bar_panel.add_widget(image)
         bar_panel.add_widget(self.label)
         bar_panel.add_widget(self.left_button)
+        bar_panel.add_widget(self.labelPage)
         bar_panel.add_widget(self.right_button)
         bar_panel.add_widget(self.close_button)
         self.scrollview.add_widget(self.img_view)
-        anchor_layout1.add_widget(self.scrollview)
-        anchor_layout1.add_widget(self.slider)
+        anchor_layout.add_widget(self.scrollview)
+        anchor_layout.add_widget(self.slider)
         box_layout.add_widget(bar_panel)
-        box_layout.add_widget(anchor_layout1)
+        box_layout.add_widget(anchor_layout)
         self.add_widget(box_layout)
 
     def reschedule(self):
@@ -182,7 +185,8 @@ class ViewerScreen(Screen):
         page=self.page-1
         if path.isfile("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(page)+".jpg"):
             self.page=page
-            self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"_"+str(self.page)+".jpg")
+            self.labelPage.text=str(self.page+1)+"/"+str(self.num_pages)
+            self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(self.page)+".jpg")
             self.slider_value = 1
 
     def on_release_right_button(self, instance):
@@ -190,7 +194,8 @@ class ViewerScreen(Screen):
         page=self.page+1
         if path.isfile("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(page)+".jpg"):
             self.page=page
-            self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"_"+str(self.page)+".jpg")
+            self.labelPage.text=str(self.page+1)+"/"+str(self.num_pages)
+            self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(self.page)+".jpg")
             self.slider_value = 1
 
     def on_src(self, instance, value):
@@ -218,6 +223,8 @@ class ViewerScreen(Screen):
                 self.saveUserDataCallback(self.user_data['rfid'], {"slider":  self.slider_value, "page": self.page})
             self.user_data = user_data
             self.page = self.user_data['page']
+            self.num_pages = self.user_data['num_pages']
+            self.labelPage.text=str(self.page+1)+"/"+str(self.num_pages)
             self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(self.page)+".jpg")
             self.slider_value = self.user_data['slider']
             self.label_text = "Scheda di "+self.user_data['name']+" "+self.user_data['surname']

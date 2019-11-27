@@ -37,35 +37,50 @@ class WorkoutPlansManager:
 		self.firebase.update("users/"+card_no, data)
 
 	def loadUserData(self, card_no):
+		try:
+			user_data = self.firebase.get("users/"+card_no).val()
+		except:
+			#no connection
+			return -2
+
+		if not user_data:
+			#no user
+			return -1
+			
 		Clock.schedule_once(partial(self.home_screen.setBarVisibility, True))
-		source_path = "users/"+card_no+"/scheda.pdf"
-		destination_path = "storage_data/"+card_no+"/"+"scheda.pdf"
 		Clock.schedule_once(partial(self.home_screen.setBarValue, 25))
-		if not path.isfile(destination_path):
-			os.system("rm -f storage_data/"+card_no+"/*")
-			os.system("mkdir -p storage_data/"+card_no)
-			self.firebase.downloadFile(source_path, destination_path)
+		
+		source_path = "users/"+card_no
+		destination_path = "storage_data/"+card_no
+
+		if not path.isfile(destination_path+"/scheda.pdf"):
+			os.system("rm -f "+destination_path+"/*")
+			os.system("mkdir -p "+destination_path)
+
+			self.firebase.downloadFile(source_path+"/scheda.pdf", destination_path+"/scheda.pdf")
+			
 			Clock.schedule_once(partial(self.home_screen.setBarValue, 50))
-			os.system("convert -density 140 "+destination_path+" -quality 50 scheda_%01d.jpg")
-		else:
-			print("file exists")
+			
+			os.system("convert -density 140 "+destination_path+"/scheda.pdf -quality 50 "+destination_path+"/scheda_%01d.jpg")
 
 		Clock.schedule_once(partial(self.home_screen.setBarValue, 75))
-		user_data = self.firebase.get("users/"+card_no).val()
-		Clock.schedule_once(partial(self.home_screen.setBarValue, 90))
 
 		return user_data
 
 	def handler(self, card_no):
-		print("handler -> card %s" % card_no)
-		
+		self.screen_manager.current = 'home'
 		user_data = self.loadUserData(card_no)
-		if not user_data:
-			print("user not exists")
-			Clock.schedule_once(partial(self.home_screen.setBarVisibility, False))
-			Clock.schedule_once(partial(self.home_screen.setBarValue, 0))
-		else:
+		
+		# if user found in firebase
+		if user_data != -1 and user_data != -2:
 			self.loadViewer(user_data)
+		else:
+			if user_data == -1:
+				text = "Chiedi informazioni in segreteria per usare il totem!"
+			else:
+				text = "Connessione di rete assente. Contatta la segreteria!"
+			self.home_screen.setHintVisibility(text, True)
+			Clock.schedule_once(partial(self.home_screen.setHintVisibility, "", False), 5)
 
 	def run(self):
 		self.rfidReader.start()

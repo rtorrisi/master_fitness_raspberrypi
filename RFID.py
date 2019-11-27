@@ -26,7 +26,7 @@ class SerialParser:
                 self.card_off_count = 0
             else:
                 self.card_off_count += 1
-            if self.card_off_count == 2:
+            if self.card_off_count == 5:
                 print("CARD OFF")
                 self.state = self.OFF
                 self.card_off_count = 0
@@ -45,7 +45,7 @@ class RFIDReader:
     def start(self):
         self.alive = True
         self.thread = threading.Thread(target=self.reader)
-        #self.thread.setDaemon(True)
+        self.thread.setDaemon(True)
         self.thread.start()
 
     def stop(self):
