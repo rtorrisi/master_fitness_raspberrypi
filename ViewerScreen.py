@@ -180,7 +180,7 @@ class ViewerScreen(Screen):
     def on_release_left_button(self, instance):
         self.reschedule()
         page=self.page-1
-        if path.isfile("storage_data/"+str(self.user_data['rfid'])+"_"+str(page)+".jpg"):
+        if path.isfile("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(page)+".jpg"):
             self.page=page
             self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"_"+str(self.page)+".jpg")
             self.slider_value = 1
@@ -188,7 +188,7 @@ class ViewerScreen(Screen):
     def on_release_right_button(self, instance):
         self.reschedule()
         page=self.page+1
-        if path.isfile("storage_data/"+str(self.user_data['rfid'])+"_"+str(page)+".jpg"):
+        if path.isfile("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(page)+".jpg"):
             self.page=page
             self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"_"+str(self.page)+".jpg")
             self.slider_value = 1
@@ -218,7 +218,7 @@ class ViewerScreen(Screen):
                 self.saveUserDataCallback(self.user_data['rfid'], {"slider":  self.slider_value, "page": self.page})
             self.user_data = user_data
             self.page = self.user_data['page']
-            self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"_"+str(self.page)+".jpg")
+            self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(self.page)+".jpg")
             self.slider_value = self.user_data['slider']
             self.label_text = "Scheda di "+self.user_data['name']+" "+self.user_data['surname']
 

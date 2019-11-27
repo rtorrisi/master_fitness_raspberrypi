@@ -18,6 +18,7 @@ from kivy.app import App
 from kivy.clock import Clock
 
 from config import config
+import os
 
 class WorkoutPlansManager:
 	def __init__(self, screen_manager, home_screen, viewer_screen):
@@ -37,17 +38,21 @@ class WorkoutPlansManager:
 
 	def loadUserData(self, card_no):
 		Clock.schedule_once(partial(self.home_screen.setBarVisibility, True))
-		source_path = "users/"+card_no+"/scheda.jpg"
-		destination_path = "storage_data/"+card_no+"_0.jpg"
+		source_path = "users/"+card_no+"/scheda.pdf"
+		destination_path = "storage_data/"+card_no+"/"+"scheda.pdf"
 		Clock.schedule_once(partial(self.home_screen.setBarValue, 25))
 		if not path.isfile(destination_path):
-			image_res = self.firebase.downloadFile(source_path, destination_path)
+			os.system("rm -f storage_data/"+card_no+"/*")
+			os.system("mkdir -p storage_data/"+card_no)
+			self.firebase.downloadFile(source_path, destination_path)
+			Clock.schedule_once(partial(self.home_screen.setBarValue, 50))
+			os.system("convert -density 140 "+destination_path+" -quality 50 scheda_%01d.jpg")
 		else:
 			print("file exists")
 
-		Clock.schedule_once(partial(self.home_screen.setBarValue, 50))
-		user_data = self.firebase.get("users/"+card_no).val()
 		Clock.schedule_once(partial(self.home_screen.setBarValue, 75))
+		user_data = self.firebase.get("users/"+card_no).val()
+		Clock.schedule_once(partial(self.home_screen.setBarValue, 90))
 
 		return user_data
 

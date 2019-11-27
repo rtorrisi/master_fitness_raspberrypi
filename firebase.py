@@ -16,7 +16,8 @@ class Firebase:
         self.user = self.auth.sign_in_with_email_and_password(config['email'], config['password'])
 
     def downloadFile(self, source_path, destination_path):
-        return self.storage.child(source_path).download(destination_path)
+        self.storage.child(source_path).download(destination_path)
+        return destination_path
 
     def get(self, source_path):
         return self.database.child(source_path).get()
