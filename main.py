@@ -24,8 +24,8 @@ class WorkoutPlansManager:
 	def __init__(self, screen_manager):
 		self.firebase = Firebase(config)
 		self.rfidReader = RFIDReader(handler_function=self.handler)
-		self.home_screen = HomeScreen(name='home', saveFunc=self.saveUserData)
-		self.viewer_screen = ViewerScreen(name='viewer')
+		self.home_screen = HomeScreen(name='home')
+		self.viewer_screen = ViewerScreen(name='viewer', saveFunc=self.saveUserData)
 		self.screen_manager = screen_manager
 		self.screen_manager.add_widget(self.home_screen)
 		self.screen_manager.add_widget(self.viewer_screen)
