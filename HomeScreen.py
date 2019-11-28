@@ -43,11 +43,11 @@ class HomeScreen(Screen):
 			anchor_y='center'
 		)
 		self.hint = Label(
-            size_hint=(1, 1),
-            font_size=20,
-            italic=True,
-            text=""
-        )
+			size_hint=(1, 1),
+			font_size=20,
+			italic=True,
+			text=""
+		)
 		self.progressbar = ProgressBar(
 			size_hint=(0.8, None),
 			value=0, opacity=0

@@ -31,7 +31,7 @@ class ViewerScreen(Screen):
     label_text = StringProperty("")
     slider_value = NumericProperty(1)
     
-    def __init__(self,**kwargs):
+    def __init__(self, saveFunc, **kwargs):
         super(ViewerScreen, self).__init__(**kwargs)
         with self.canvas:
             self.bg = Rectangle(source='app_data/background.jpg', pos=self.pos, size=self.size)
@@ -42,18 +42,18 @@ class ViewerScreen(Screen):
         self.user_data = None
         self.page = 0
         self.num_pages = 0
-        self.saveUserDataCallback = None
+        self.saveUserDataCallback = saveFunc
         self.timeout = 20
 
         box_layout = BoxLayout(
-			orientation='vertical'
-		)
+            orientation='vertical'
+        )
         bar_panel = BarPanel(
-			orientation='horizontal',
+            orientation='horizontal',
             size_hint=(1, None),
             height=80,
-			padding=7
-		)
+            padding=7
+        )
         image = Image(
             size_hint=(None, 1),
             width=150,
@@ -106,9 +106,9 @@ class ViewerScreen(Screen):
             on_release=self.on_release_right_button
         )
         anchor_layout = AnchorLayout(
-			size_hint=(1, 0.8),
+            size_hint=(1, 0.8),
             anchor_x='right'
-		)
+        )
         self.scrollview = ScrollView(
             size_hint=(1, 1),
             bar_color=[0,0,0,0],
@@ -131,7 +131,7 @@ class ViewerScreen(Screen):
         self.img_view = Image(
             size_hint=(1, None),
             height=1450,
-			nocache=True,
+            nocache=True,
             source=self.src
         )
 
@@ -214,19 +214,13 @@ class ViewerScreen(Screen):
     def setSourcePath(self, path, *largs):
         self.src = path
 
-    def setUserData(self, saveUserDataFunc, user_data, *largs):
-        if not self.saveUserDataCallback:
-            self.saveUserDataCallback = saveUserDataFunc
-
-        if not self.user_data or self.user_data['rfid'] != user_data['rfid']:
-            if self.user_data and self.user_data['rfid'] != user_data['rfid']:
-                self.saveUserDataCallback(self.user_data['rfid'], {"slider":  self.slider_value, "page": self.page})
-            self.user_data = user_data
-            self.page = self.user_data['page']
-            self.num_pages = self.user_data['num_pages']
-            self.labelPage.text=str(self.page+1)+"/"+str(self.num_pages)
-            self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(self.page)+".jpg")
-            self.slider_value = self.user_data['slider']
-            self.label_text = "Scheda di "+self.user_data['name']+" "+self.user_data['surname']
+    def setUserData(self, user_data, *largs):
+        self.user_data = user_data
+        self.page = self.user_data['page']
+        self.num_pages = self.user_data['num_pages']
+        self.labelPage.text=str(self.page+1)+"/"+str(self.num_pages)
+        self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(self.page)+".jpg")
+        self.slider_value = self.user_data['slider']
+        self.label_text = "Scheda di "+self.user_data['name']+" "+self.user_data['surname']
 
         self.reschedule()

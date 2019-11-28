@@ -21,15 +21,17 @@ from config import config
 import os
 
 class WorkoutPlansManager:
-	def __init__(self, screen_manager, home_screen, viewer_screen):
+	def __init__(self, screen_manager):
 		self.firebase = Firebase(config)
 		self.rfidReader = RFIDReader(handler_function=self.handler)
-		self.home_screen = home_screen
-		self.viewer_screen = viewer_screen
-		self.screen_manager = screen_manager		
+		self.home_screen = HomeScreen(name='home', saveFunc=self.saveUserData)
+		self.viewer_screen = ViewerScreen(name='viewer')
+		self.screen_manager = screen_manager
+		self.screen_manager.add_widget(self.home_screen)
+		self.screen_manager.add_widget(self.viewer_screen)
 
 	def loadViewer(self, user_data):
-		Clock.schedule_once(partial(self.viewer_screen.setUserData, self.saveUserData, user_data))
+		Clock.schedule_once(partial(self.viewer_screen.setUserData, user_data))
 		Clock.schedule_once(partial(self.home_screen.setBarValue, 100))
 		self.screen_manager.current = 'viewer'
 
@@ -90,14 +92,9 @@ class WorkoutPlansManager:
 
 
 screen_manager = ScreenManager(transition=NoTransition())
-home_screen = HomeScreen(name='home')
-viewer_screen = ViewerScreen(name='viewer')
-
-screen_manager.add_widget(home_screen)
-screen_manager.add_widget(viewer_screen)
 
 class TestApp(App):
-	WPM = WorkoutPlansManager(screen_manager, home_screen, viewer_screen)
+	WPM = WorkoutPlansManager(screen_manager)
 
 	def build(self):
 		self.WPM.run()

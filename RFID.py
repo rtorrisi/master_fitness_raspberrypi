@@ -26,7 +26,7 @@ class SerialParser:
                 self.card_off_count = 0
             else:
                 self.card_off_count += 1
-            if self.card_off_count == 5:
+            if self.card_off_count == 15:
                 print("CARD OFF")
                 self.state = self.OFF
                 self.card_off_count = 0
