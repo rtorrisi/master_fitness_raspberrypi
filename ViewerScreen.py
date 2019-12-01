@@ -128,12 +128,7 @@ class ViewerScreen(Screen):
         )
         self.scrollview.bind(scroll_y=self.slider_change)
         self.slider.bind(value=self.scroll_change)
-        self.img_view = Image(
-            size_hint=(1, None),
-            height=1450,
-            nocache=True,
-            source=self.src
-        )
+        self.img_view = None #Image(size_hint=(1, None), height=1450, nocache=True, source=self.src)
 
         bar_panel.add_widget(image)
         bar_panel.add_widget(self.label)
@@ -141,7 +136,7 @@ class ViewerScreen(Screen):
         bar_panel.add_widget(self.labelPage)
         bar_panel.add_widget(self.right_button)
         bar_panel.add_widget(self.close_button)
-        self.scrollview.add_widget(self.img_view)
+        #self.scrollview.add_widget(self.img_view)
         anchor_layout.add_widget(self.scrollview)
         anchor_layout.add_widget(self.slider)
         box_layout.add_widget(bar_panel)
@@ -152,13 +147,23 @@ class ViewerScreen(Screen):
         Clock.unschedule(self.event)
         self.event = Clock.schedule_once(self.go_to_home, self.timeout)
 
-    def on_enter(self):
-        pass
+    def on_pre_enter(self):
+        self.img_view = Image(
+            size_hint=(1, None),
+            height=1450,
+            nocache=True,
+            source=self.src
+        )
+        self.scrollview.add_widget(self.img_view)
 
     def on_pre_leave(self):
         Clock.unschedule(self.event)
         if self.saveUserDataCallback and self.user_data :
             self.saveUserDataCallback(self.user_data['rfid'], {"slider": self.slider_value, "page":self.page})
+    
+    def on_leave(self):
+        self.scrollview.remove_widget(self.img_view)
+        self.img_view = None
 
     def go_to_home(self, *largs):
         self.manager.current = 'home'
@@ -199,8 +204,10 @@ class ViewerScreen(Screen):
             self.slider_value = 1
 
     def on_src(self, instance, value):
-        self.img_view.source = value
-        self.img_view.reload()
+        if self.img_view:
+            self.img_view.source = value
+        else:
+            print("img_view is None")
 
     def on_label_text(self, instance, value):
         self.label.text = value
