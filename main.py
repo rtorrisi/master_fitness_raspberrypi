@@ -18,6 +18,8 @@ from kivy.app import App
 from kivy.clock import Clock
 
 from config import config
+from remove_old import deleteOldFolders
+import zipfile
 import os
 
 class WorkoutPlansManager:
@@ -42,28 +44,35 @@ class WorkoutPlansManager:
 		try:
 			user_data = self.firebase.get("users/"+card_no).val()
 		except:
-			#no connection
-			return -2
+			return -2 #firebase error
 
 		if not user_data:
-			#no user
-			return -1
+			return -1 #no user
 			
 		Clock.schedule_once(partial(self.home_screen.setBarVisibility, True))
 		Clock.schedule_once(partial(self.home_screen.setBarValue, 25))
 		
 		source_path = "users/"+card_no
 		destination_path = "storage_data/"+card_no
+		filename_path = '%s/%s' % (destination_path, user_data['file'])
 
-		if not path.isfile(destination_path+"/scheda.pdf"):
-			os.system("rm -f "+destination_path+"/*")
-			os.system("mkdir -p "+destination_path)
+		if not path.isfile(filename_path):
+			os.system("rm -f %s/*" % destination_path)
+			os.system("mkdir -p %s" % destination_path)
 
-			self.firebase.downloadFile(source_path+"/scheda.pdf", destination_path+"/scheda.pdf")
-			
+			try:
+				self.firebase.downloadFile(source_path+"/scheda.zip", filename_path)
+			except:
+				return -2 #firebase error
+
 			Clock.schedule_once(partial(self.home_screen.setBarValue, 50))
-			
-			os.system("convert -density 140 "+destination_path+"/scheda.pdf -quality 50 "+destination_path+"/scheda_%01d.jpg")
+			with zipfile.ZipFile(filename_path,"r") as zip_ref:
+				for zip_info in zip_ref.infolist():
+					if zip_info.filename[-1] == '/':
+						continue
+					zip_info.filename = os.path.basename(zip_info.filename)
+					zip_ref.extract(zip_info, destination_path)
+			#os.system("convert -density 140 "+destination_path+"/scheda.pdf -quality 50 "+destination_path+"/scheda_%01d.jpg")
 
 		Clock.schedule_once(partial(self.home_screen.setBarValue, 75))
 
@@ -74,13 +83,13 @@ class WorkoutPlansManager:
 		user_data = self.loadUserData(card_no)
 		
 		# if user found in firebase
-		if user_data != -1 and user_data != -2:
+		if user_data not in [-1, -2]:
 			self.loadViewer(user_data)
 		else:
 			if user_data == -1:
 				text = "Chiedi informazioni in segreteria per usare il totem!"
 			else:
-				text = "Connessione di rete assente. Contatta la segreteria!"
+				text = "Impossibile scaricare scheda al momento. Contatta la segreteria."
 			self.home_screen.setHintVisibility(text, True)
 			Clock.schedule_once(partial(self.home_screen.setHintVisibility, "", False), 5)
 
@@ -105,4 +114,8 @@ class TestApp(App):
 
 
 if __name__ == "__main__":
+	days = 60
+	seconds_per_day = 86400
+	deleteOldFolders('storage_data', days*seconds_per_day)
+	
 	TestApp().run()

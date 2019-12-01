@@ -200,6 +200,7 @@ class ViewerScreen(Screen):
 
     def on_src(self, instance, value):
         self.img_view.source = value
+        self.img_view.reload()
 
     def on_label_text(self, instance, value):
         self.label.text = value
