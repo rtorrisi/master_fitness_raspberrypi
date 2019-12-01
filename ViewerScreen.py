@@ -147,7 +147,7 @@ class ViewerScreen(Screen):
         Clock.unschedule(self.event)
         self.event = Clock.schedule_once(self.go_to_home, self.timeout)
 
-    def on_pre_enter(self):
+    def on_enter(self):
         self.img_view = Image(
             size_hint=(1, None),
             height=1450,
@@ -155,6 +155,13 @@ class ViewerScreen(Screen):
             source=self.src
         )
         self.scrollview.add_widget(self.img_view)
+        self.page = self.user_data['page']
+        self.num_pages = self.user_data['num_pages']
+        self.labelPage.text=str(self.page+1)+"/"+str(self.num_pages)
+        self.slider_value = self.user_data['slider']
+        self.label_text = "Scheda di "+self.user_data['name']+" "+self.user_data['surname']
+        self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(self.page)+".jpg")
+        self.reschedule()
 
     def on_pre_leave(self):
         Clock.unschedule(self.event)
@@ -224,11 +231,3 @@ class ViewerScreen(Screen):
 
     def setUserData(self, user_data, *largs):
         self.user_data = user_data
-        self.page = self.user_data['page']
-        self.num_pages = self.user_data['num_pages']
-        self.labelPage.text=str(self.page+1)+"/"+str(self.num_pages)
-        self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(self.page)+".jpg")
-        self.slider_value = self.user_data['slider']
-        self.label_text = "Scheda di "+self.user_data['name']+" "+self.user_data['surname']
-
-        self.reschedule()
