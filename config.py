@@ -7,5 +7,6 @@ config = {
     "databaseURL": lines[2][:-1],
     "storageBucket": lines[3][:-1],
     "email": lines[4][:-1],
-    "password": lines[5][:-1]
+    "password": lines[5][:-1],
+    "serviceAccount": lines[6][:-1]
 }
