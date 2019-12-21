@@ -2,5 +2,5 @@ __pycache__/
 *.py[cod]
 
 config_file.txt
-
+app_data/serviceAccount.json
 storage_data/*
