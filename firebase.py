@@ -10,9 +10,12 @@ class Firebase:
             "serviceAccount": config['serviceAccount']
         }
 
-        self.firebase = pyrebase.initialize_app(firebase_config)
-        self.database = self.firebase.database()
-        self.storage = self.firebase.storage()
+        try:
+            self.firebase = pyrebase.initialize_app(firebase_config)
+            self.database = self.firebase.database()
+            self.storage = self.firebase.storage()
+        except Exception as e:
+            print(e)
 
     def deleteFile(self, node, file_to_delete):
         try:
@@ -21,7 +24,6 @@ class Firebase:
         except Exception as e:
             print(e)
             return False
-
 
     def downloadFile(self, node, destination_path):
         self.storage.child(node).download(destination_path)
@@ -45,6 +47,14 @@ class Firebase:
             
     def get(self, node):
         return self.database.child(node).get()
+
+    def remove(self, node):
+        try:
+            self.database.child(node).remove()
+            return True
+        except Exception as e:
+            print(e)
+            return False
 
     def update(self, node, data):
         try:
