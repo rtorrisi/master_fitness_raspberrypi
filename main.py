@@ -10,6 +10,7 @@ import kivy
 kivy.require('1.11.1')
 
 from kivy.config import Config
+Config.set("graphics", "show_cursor", 0)
 Config.set('graphics', 'width', '1024')
 Config.set('graphics', 'height', '600')
 
