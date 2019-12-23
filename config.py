@@ -1,4 +1,4 @@
-config_file = open("config_file.txt", "r")
+config_file = open("app_data/config_file.txt", "r")
 lines = config_file.readlines()
 
 config = {
