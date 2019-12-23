@@ -180,8 +180,10 @@ class ViewerScreen(Screen):
         )
         self.img_view.bind(size_hint=self.on_img_hint_update)
         self.scrollview.add_widget(self.img_view)
-        self.page = self.user_data['page']
         self.num_pages = self.user_data['num_pages']
+        self.page = self.user_data['page']
+        if self.page + 1 > self.num_pages:
+            self.page = self.num_pages - 1
         self.labelPage.text=str(self.page+1)+"/"+str(self.num_pages)
         self.label_text = "Scheda di "+self.user_data['name']+" "+self.user_data['surname']
         self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(self.page)+".jpg")
