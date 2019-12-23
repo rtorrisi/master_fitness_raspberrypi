@@ -27,12 +27,10 @@ class SerialParser:
             else:
                 self.card_off_count += 1
             if self.card_off_count == 15:
-                print("CARD OFF")
                 self.state = self.OFF
                 self.card_off_count = 0
             
         elif self.state == self.OFF and data:
-            print("CARD ON")
             self.state = self.ON
             card_no = int(self.convert_hex(hex(data)[2:-2], 'big', 'little'), 16)
             self.handler(str(card_no).zfill(14))            
@@ -49,14 +47,12 @@ class RFIDReader:
         self.thread.start()
 
     def stop(self):
-        print('stopping')
         if self.alive:
             self.alive = False
             self.thread.join()
             GPIO.cleanup()
         
     def reader(self):
-        print('RFIDReader thread started')
         while self.alive:
             try:
                 data = self.RC522.read_id_no_block()
@@ -64,4 +60,3 @@ class RFIDReader:
             except Exception as e:
                 print(e)
         self.alive = False
-        print('RFIDReader thread terminated')

@@ -264,8 +264,6 @@ class ViewerScreen(Screen):
     def on_src(self, instance, value):
         if self.img_view:
             self.img_view.source = value
-        else:
-            print("img_view is None")
 
     def on_label_text(self, instance, value):
         self.label.text = value
