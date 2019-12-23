@@ -24,7 +24,7 @@ class HomeScreen(Screen):
 			padding=30
 		)
 		logo = Image(
-			size_hint=(1, 1),
+			size_hint=(1, 3),
 			source='app_data/master_fitness_logo_w.png'
 		)
 		img_RFID = Image(
@@ -57,7 +57,7 @@ class HomeScreen(Screen):
 		boxlayout.add_widget(logo)
 		boxlayout.add_widget(self.anchorlayout2)
 		boxlayout.add_widget(self.anchorlayout)
-		boxlayout.add_widget(img_RFID)
+		#boxlayout.add_widget(img_RFID)
 		self.add_widget(boxlayout)
 	
 	def on_enter(self):
