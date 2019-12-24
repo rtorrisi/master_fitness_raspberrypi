@@ -115,6 +115,6 @@ class TestApp(App):
 if __name__ == "__main__":
 	days = 60
 	seconds_per_day = 86400
-	deleteOldFolders('storage_data', days*seconds_per_day)
-	
+	seconds = days*seconds_per_day
+	deleteOldFolders('storage_data', seconds)
 	TestApp().run()
