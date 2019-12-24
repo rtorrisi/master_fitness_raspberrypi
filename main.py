@@ -36,70 +36,65 @@ class TestApp(App):
 
 	def build(self):
 		self.rfidReader.start()
-		#self.handler('234234')
 		return self.screen_manager
 
 	def __del__(self):
 		self.rfidReader.stop()
-		
-	def loadHome(self, *largs):
-		self.screen_manager.current = 'home'
-
-	def loadViewer(self, *largs):
-		self.screen_manager.current = 'viewer'
 
 	def saveUserData(self, card_no, data):
 		self.firebase.update("users/"+card_no, data)
 
-	def loadUserData(self, card_no):
+	def getUserData(self, card_no):
 		try:
 			user_data = self.firebase.get("users/"+card_no).val()
-		except:
-			return -2 #firebase error
+			return user_data
+		except Exception:
+			raise Exception("Nessuna connessione ad internet. Contatta la segreteria!")
 
-		if not user_data:
-			return -1 #no user
-		
-		source_path = "users/"+card_no
-		destination_path = "storage_data/"+card_no
-		filename_path = '%s/%s' % (destination_path, user_data['file'])
+	def getUserRFID(self, user_data):
+		try:
+			if user_data: return user_data['rfid']
+			else: raise Exception('no user')
+		except Exception:
+			raise Exception("Utente non registrato. Chiedi informazioni in segreteria!")
 
-		if not path.isfile(filename_path):
-			system("rm -f %s/*" % destination_path)
-			system("mkdir -p %s" % destination_path)
+	def downloadUserFile(self, user_data, rfid, destination_path, filename_path):
+		system("rm -f %s/*" % destination_path)
+		system("mkdir -p %s" % destination_path)
 
-			try:
-				self.firebase.downloadFile(source_path+"/scheda.zip", filename_path)
-			except:
-				return -2 #firebase error
+		try:
+			self.firebase.downloadFile("users/"+rfid+"/scheda.zip", filename_path)
+		except Exception:
+			raise Exception("Impossibile scaricare file dal server. Contatta la segreteria!")
 
+		try:
 			with zipfile.ZipFile(filename_path,"r") as zip_ref:
 				for zip_info in zip_ref.infolist():
 					if zip_info.filename[-1] == '/':
 						continue
 					zip_info.filename = path.basename(zip_info.filename)
 					zip_ref.extract(zip_info, destination_path)
-			#system("convert -density 140 "+destination_path+"/scheda.pdf -quality 50 "+destination_path+"/scheda_%01d.jpg")
+		except Exception:
+			raise Exception("Impossibile estrarre scheda dall'archivio. Contatta la segreteria!")
+			
 
-		return user_data
-
-	def loadAll(self, card_no, *largs):
-		user_data = self.loadUserData(card_no)
-		
-		# if user found in firebase
-		if user_data not in [-1, -2]:
-			Clock.schedule_once(partial(self.viewer_screen.setUserData, user_data), -1)
-			Clock.schedule_once(self.loadViewer, 0.5)
-		else:
-			if user_data == -1:
-				self.showHint("Utente non registrato. Chiedi informazioni in segreteria!")
-			else:
-				self.showHint("Impossibile scaricare file dal server. Contatta la segreteria!")
+	def loadViewerScreen(self, card_no, *largs):
+		try:
+			user_data = self.getUserData(card_no)
+			rfid = self.getUserRFID(user_data)
+			destination_path = "storage_data/"+rfid
+			filename_path = '%s/%s' % (destination_path, user_data['file'])
+			fileExists = path.isfile(filename_path)
+			if not fileExists: self.downloadUserFile(user_data, rfid, destination_path, filename_path)
+			self.viewer_screen.setUserData(user_data)
+			self.screen_manager.current = 'viewer'
+		except Exception as e:
+			self.showHint(str(e))
 
 	def handler(self, card_no):
 		Clock.schedule_once(partial(self.home_screen.setHintMessage, "Carico scheda..."), -1)
-		Clock.schedule_once(self.loadHome, 0)
-		Clock.schedule_once(partial(self.loadAll, card_no), 0.1)
+		self.screen_manager.current = 'home'
+		Clock.schedule_once(partial(self.loadViewerScreen, card_no), 0.1)
 
 	def showHint(self, text, timeout=6):
 		if self.cleanInfoEvent: Clock.unschedule(self.cleanInfoEvent)
@@ -112,3 +107,5 @@ if __name__ == "__main__":
 	seconds = days*seconds_per_day
 	deleteOldFolders('storage_data', seconds)
 	TestApp().run()
+
+#system("convert -density 140 "+destination_path+"/scheda.pdf -quality 50 "+destination_path+"/scheda_%01d.jpg")

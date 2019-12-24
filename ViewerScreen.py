@@ -171,7 +171,10 @@ class ViewerScreen(Screen):
         Clock.unschedule(self.event)
         self.event = Clock.schedule_once(self.go_to_home, self.timeout)
 
-    def on_enter(self):
+    def on_pre_enter(self):
+        self.scrollview.remove_widget(self.img_view)
+        self.img_view = None
+
         self.img_view = Image(
             size_hint=(self.default_zoom[0], self.default_zoom[1]),
             allow_stretch = True,
