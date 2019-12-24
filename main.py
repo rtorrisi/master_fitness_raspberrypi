@@ -2,10 +2,13 @@ from RFID import RFIDReader
 from firebase import Firebase
 from HomeScreen import HomeScreen
 from ViewerScreen import ViewerScreen
-from os import path, environ
+from os import path, environ, system
+import zipfile
 from functools import partial 
-environ["KIVY_NO_CONSOLELOG"] = "1"
+from config import config
+from remove_old import deleteOldFolders
 
+environ["KIVY_NO_CONSOLELOG"] = "1"
 import kivy
 kivy.require('1.11.1')
 
@@ -14,14 +17,9 @@ Config.set("graphics", "show_cursor", 0)
 Config.set('graphics', 'width', '1024')
 Config.set('graphics', 'height', '600')
 
-from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition
+from kivy.uix.screenmanager import ScreenManager, NoTransition
 from kivy.app import App
 from kivy.clock import Clock
-
-from config import config
-from remove_old import deleteOldFolders
-import zipfile
-import os
 
 class WorkoutPlansManager:
 	def __init__(self, screen_manager):
