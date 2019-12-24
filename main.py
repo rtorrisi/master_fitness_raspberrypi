@@ -42,9 +42,10 @@ class TestApp(App):
 	def __del__(self):
 		self.rfidReader.stop()
 		
-	def loadViewer(self, user_data):
-		Clock.schedule_once(partial(self.viewer_screen.setUserData, user_data))
-		Clock.schedule_once(partial(self.home_screen.setBarValue, 100))
+	def loadHome(self, *largs):
+		self.screen_manager.current = 'home'
+
+	def loadViewer(self, *largs):
 		self.screen_manager.current = 'viewer'
 
 	def saveUserData(self, card_no, data):
@@ -58,9 +59,6 @@ class TestApp(App):
 
 		if not user_data:
 			return -1 #no user
-			
-		Clock.schedule_once(partial(self.home_screen.setBarVisibility, True))
-		Clock.schedule_once(partial(self.home_screen.setBarValue, 25))
 		
 		source_path = "users/"+card_no
 		destination_path = "storage_data/"+card_no
@@ -75,7 +73,6 @@ class TestApp(App):
 			except:
 				return -2 #firebase error
 
-			Clock.schedule_once(partial(self.home_screen.setBarValue, 50))
 			with zipfile.ZipFile(filename_path,"r") as zip_ref:
 				for zip_info in zip_ref.infolist():
 					if zip_info.filename[-1] == '/':
@@ -84,24 +81,30 @@ class TestApp(App):
 					zip_ref.extract(zip_info, destination_path)
 			#system("convert -density 140 "+destination_path+"/scheda.pdf -quality 50 "+destination_path+"/scheda_%01d.jpg")
 
-		Clock.schedule_once(partial(self.home_screen.setBarValue, 75))
-
 		return user_data
 
-	def handler(self, card_no):
-		self.screen_manager.current = 'home'
+	def loadAll(self, card_no, *largs):
 		user_data = self.loadUserData(card_no)
 		
 		# if user found in firebase
 		if user_data not in [-1, -2]:
-			self.loadViewer(user_data)
+			Clock.schedule_once(partial(self.viewer_screen.setUserData, user_data), -1)
+			Clock.schedule_once(self.loadViewer, 0.5)
 		else:
 			if user_data == -1:
-				text = "Chiedi informazioni in segreteria per usare il totem!"
+				self.showHint("Utente non registrato. Chiedi informazioni in segreteria!")
 			else:
-				text = "Impossibile scaricare scheda al momento. Contatta la segreteria."
-			self.home_screen.setHintVisibility(text, True)
-			Clock.schedule_once(partial(self.home_screen.setHintVisibility, "", False), 5)
+				self.showHint("Impossibile scaricare file dal server. Contatta la segreteria!")
+
+	def handler(self, card_no):
+		Clock.schedule_once(partial(self.home_screen.setHintMessage, "Carico scheda..."), -1)
+		Clock.schedule_once(self.loadHome, 0)
+		Clock.schedule_once(partial(self.loadAll, card_no), 0.1)
+
+	def showHint(self, text, timeout=6):
+		if self.cleanInfoEvent: Clock.unschedule(self.cleanInfoEvent)
+		self.home_screen.setHintMessage(text)
+		self.cleanInfoEvent = Clock.schedule_once(partial(self.home_screen.setHintMessage, ""), timeout)
 
 if __name__ == "__main__":
 	days = 60
