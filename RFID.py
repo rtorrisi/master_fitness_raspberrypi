@@ -33,6 +33,7 @@ class SerialParser:
         elif self.state == self.OFF and data:
             self.state = self.ON
             card_no = int(self.convert_hex(hex(data)[2:-2], 'big', 'little'), 16)
+            print(card_no)
             self.handler(str(card_no).zfill(14))            
             
 class RFIDReader:
