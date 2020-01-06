@@ -2,6 +2,7 @@ from kivy.uix.screenmanager import Screen
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.anchorlayout import AnchorLayout
+from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.slider import Slider
@@ -11,6 +12,7 @@ from kivy.properties import StringProperty, NumericProperty
 from kivy.graphics import Rectangle, Color
 from kivy.clock import Clock
 from kivy.effects.scroll import ScrollEffect
+from kivy.uix.popup import Popup
 from os import path
 
 class BarPanel(BoxLayout):
@@ -26,6 +28,27 @@ class BarPanel(BoxLayout):
         self.bg.pos = self.pos
         self.bg.size = self.size
 
+class QrDialog(FloatLayout):
+    def __init__(self, rfid, **kwargs):
+        super(QrDialog, self).__init__(**kwargs)
+
+        self.layout = AnchorLayout(anchor_x='center', anchor_y='center', size_hint=(1,1))
+        self.layout.bind(pos=self.update_layout)
+        self.layout.bind(size=self.update_layout)
+        
+        qr_image = Image(
+            size_hint=(0.9, 0.9),
+            allow_stretch = True,
+            nocache=True,
+            source="storage_data/"+rfid+"/qr_code.png"
+        )
+        self.layout.add_widget(qr_image)
+        self.add_widget(self.layout)
+
+    def update_layout(self, *args):
+        self.layout.pos = self.pos
+        self.layout.size = self.size
+
 class ViewerScreen(Screen):
     src = StringProperty("")
     label_text = StringProperty("")
@@ -39,6 +62,7 @@ class ViewerScreen(Screen):
         self.bind(size=self.update_bg)
         
         self.event = None
+        self._popup = None
         self.user_data = None
         self.page = 0
         self.default_zoom = [1, 2.79]
@@ -71,6 +95,23 @@ class ViewerScreen(Screen):
             width=50,
             font_size=30,
             italic=True
+        )
+        self.qr_button_anchor = AnchorLayout(
+            size_hint=(None, 1),
+            width=100,
+            anchor_x='center',
+            anchor_y='center'
+        )
+        self.qr_button = Button(
+            size_hint=(None, None),
+            width=70,
+            height=70,
+            valign='center',
+            halign='center',
+            background_normal='app_data/qr_normal.png',
+            background_down='app_data/qr_down.png',
+            border=(0,0,0,0),
+            on_release=self.on_release_qr_button
         )
         self.close_button = Button(
             size_hint=(None, None),
@@ -153,6 +194,8 @@ class ViewerScreen(Screen):
         self.img_view = None #Image(size_hint=(1, None), height=1450, nocache=True, source=self.src)
 
         bar_panel.add_widget(image)
+        bar_panel.add_widget(self.qr_button_anchor)
+        self.qr_button_anchor.add_widget(self.qr_button)
         bar_panel.add_widget(self.label)
         bar_panel.add_widget(self.zoomOut_button)
         bar_panel.add_widget(self.zoomIn_button)
@@ -175,6 +218,13 @@ class ViewerScreen(Screen):
         self.scrollview.remove_widget(self.img_view)
         self.img_view = None
 
+        self.num_pages = self.user_data['num_pages']
+        self.page = self.user_data['page']
+        if self.page + 1 > self.num_pages:
+            self.page = self.num_pages - 1
+        self.labelPage.text=str(self.page+1)+"/"+str(self.num_pages)
+        self.label_text = "Scheda di "+self.user_data['name']+" "+self.user_data['surname']
+        self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(self.page)+".jpg")
         self.img_view = Image(
             size_hint=(self.default_zoom[0], self.default_zoom[1]),
             allow_stretch = True,
@@ -183,13 +233,7 @@ class ViewerScreen(Screen):
         )
         self.img_view.bind(size_hint=self.on_img_hint_update)
         self.scrollview.add_widget(self.img_view)
-        self.num_pages = self.user_data['num_pages']
-        self.page = self.user_data['page']
-        if self.page + 1 > self.num_pages:
-            self.page = self.num_pages - 1
-        self.labelPage.text=str(self.page+1)+"/"+str(self.num_pages)
-        self.label_text = "Scheda di "+self.user_data['name']+" "+self.user_data['surname']
-        self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(self.page)+".jpg")
+
         try:
             self.slider_value = self.user_data['slider_y']
             self.scrollview.scroll_x = self.user_data['slider_x']
@@ -204,6 +248,9 @@ class ViewerScreen(Screen):
         self.reschedule()
 
     def on_pre_leave(self):
+        if self._popup :
+            self._popup.dismiss()
+            self._popup = None
         Clock.unschedule(self.event)
         if self.saveUserDataCallback and self.user_data :
             self.saveUserDataCallback(self.user_data['rfid'], {"page": self.page, "zoom": self.img_view.size_hint, "slider_y": self.slider_value, "slider_x": self.scrollview.scroll_x})
@@ -228,6 +275,12 @@ class ViewerScreen(Screen):
 
     def on_release_close_button(self, instance):
         self.go_to_home()
+
+    def on_release_qr_button(self, instance):
+        self.reschedule()
+        content = QrDialog(rfid=str(self.user_data['rfid']))
+        self._popup = Popup(title="Scansiona il QR Code", content=content, size_hint=(None, None), width=250, height=300)
+        self._popup.open()
 
     def on_release_left_button(self, instance):
         self.reschedule()

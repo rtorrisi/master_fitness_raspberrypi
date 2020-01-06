@@ -4,6 +4,7 @@ from HomeScreen import HomeScreen
 from ViewerScreen import ViewerScreen
 from os import path, environ, system
 import zipfile
+import pyqrcode
 from functools import partial 
 from config import config
 from remove_old import deleteOldFolders
@@ -76,7 +77,12 @@ class TestApp(App):
 					zip_ref.extract(zip_info, destination_path)
 		except Exception:
 			raise Exception("Impossibile estrarre scheda dall'archivio. Contatta la segreteria!")
-			
+		
+		try:
+			qr = pyqrcode.create('https://firebasestorage.googleapis.com/v0/b/master-fitness.appspot.com/o/users%2F'+rfid+'%2Fscheda.pdf?alt=media')
+			qr.png(destination_path+'/qr_code.png', scale=4)
+		except Exception as e:
+			raise Exception("Impossibile creare il QR Code. Contatta la segreteria!")
 
 	def loadViewerScreen(self, card_no, *largs):
 		try:
@@ -88,6 +94,7 @@ class TestApp(App):
 			if not fileExists: self.downloadUserFile(user_data, rfid, destination_path, filename_path)
 			self.viewer_screen.setUserData(user_data)
 			self.screen_manager.current = 'viewer'
+
 		except Exception as e:
 			self.showHint(str(e))
 
