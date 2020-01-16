@@ -64,9 +64,16 @@ class TestApp(App):
 		system("mkdir -p %s" % destination_path)
 
 		try:
-			self.firebase.downloadFile("users/"+rfid+"/scheda.zip", filename_path)
-		except Exception:
-			raise Exception("Impossibile scaricare file dal server. Contatta la segreteria!")
+			try:
+				node = self.firebase.getNode("users/"+rfid+"/scheda.zip")
+			except Exception as e:
+				raise e
+			try:
+				node.download(filename_path)
+			except Exception as e:
+				raise e
+		except Exception as e:
+			raise e#Exception("Impossibile scaricare file dal server. Contatta la segreteria!")
 
 		try:
 			with zipfile.ZipFile(filename_path,"r") as zip_ref:

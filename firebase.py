@@ -20,7 +20,7 @@ class Firebase:
 
     def checkConnection(self):
         try:
-            response = urlopen('https://www.google.com/', timeout=10)
+            response = urlopen('https://www.google.com/', timeout=3)
             return True
         except: 
             return False
@@ -35,10 +35,15 @@ class Firebase:
             print(e)
             return False
 
+    def getNode(self, node):
+        if self.checkConnection():
+            return self.storage.child(node)
+        else: raise Exception("No connection")
+
     def downloadFile(self, node, destination_path):
         if self.checkConnection():
-            self.storage.child(node).download(destination_path)
-            return destination_path
+            f = self.storage.child(node)
+            f.download(destination_path)
         else: raise Exception("No connection")
 
     def uploadFile(self, node, source_path):
