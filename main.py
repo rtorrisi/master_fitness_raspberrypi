@@ -59,9 +59,9 @@ class TestApp(App):
 		except Exception:
 			raise Exception("Utente non registrato. Chiedi informazioni in segreteria!")
 
-	def downloadUserFile(self, user_data, rfid, destination_path, filename_path):
-		system("rm -f %s/*" % destination_path)
+	def downloadUserFile(self, rfid, destination_path, filename_path):
 		system("mkdir -p %s" % destination_path)
+		system("rm -f %s/*" % destination_path)
 
 		try:
 			try:
@@ -75,6 +75,9 @@ class TestApp(App):
 		except Exception as e:
 			raise e#Exception("Impossibile scaricare file dal server. Contatta la segreteria!")
 
+		self.extractUserFile(rfid, destination_path, filename_path)
+
+	def extractUserFile(self, rfid, destination_path, filename_path):
 		try:
 			with zipfile.ZipFile(filename_path,"r") as zip_ref:
 				for zip_info in zip_ref.infolist():
@@ -98,7 +101,11 @@ class TestApp(App):
 			destination_path = "storage_data/"+rfid
 			filename_path = '%s/%s' % (destination_path, user_data['file'])
 			fileExists = path.isfile(filename_path)
-			if not fileExists: self.downloadUserFile(user_data, rfid, destination_path, filename_path)
+			if not fileExists: self.downloadUserFile(rfid, destination_path, filename_path)
+			else:
+				schedaName_path = destination_path+'/scheda_0.jpg'
+				fileExists = path.isfile(schedaName_path)
+				if not fileExists: self.extractUserFile(rfid, destination_path, filename_path)
 			self.viewer_screen.setUserData(user_data)
 			self.screen_manager.current = 'viewer'
 
