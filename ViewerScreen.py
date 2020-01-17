@@ -54,20 +54,20 @@ class ViewerScreen(Screen):
     label_text = StringProperty("")
     slider_value = NumericProperty(1)
     
-    def __init__(self, saveFunc, **kwargs):
+    def __init__(self, firebase, **kwargs):
         super(ViewerScreen, self).__init__(**kwargs)
         with self.canvas:
             self.bg = Rectangle(source='app_data/background.jpg', pos=self.pos, size=self.size)
         self.bind(pos=self.update_bg)
         self.bind(size=self.update_bg)
         
+        self.firebase = firebase
         self.event = None
         self._popup = None
         self.user_data = None
         self.page = 0
         self.default_zoom = [1, 2.79]
         self.num_pages = 0
-        self.saveUserDataCallback = saveFunc
         self.timeout = 30
 
         box_layout = BoxLayout(
@@ -248,14 +248,21 @@ class ViewerScreen(Screen):
         self.reschedule()
 
     def on_pre_leave(self):
+        Clock.unschedule(self.event)
         if self._popup :
             self._popup.dismiss()
             self._popup = None
-        Clock.unschedule(self.event)
-        if self.saveUserDataCallback and self.user_data :
-            self.saveUserDataCallback(self.user_data['rfid'], {"page": self.page, "zoom": self.img_view.size_hint, "slider_y": self.slider_value, "slider_x": self.scrollview.scroll_x})
     
     def on_leave(self):
+        if self.user_data :
+            data = {
+                "page": self.page,
+                "zoom": self.img_view.size_hint,
+                "slider_x": self.scrollview.scroll_x,
+                "slider_y": self.slider_value
+            }
+            self.saveUserData(self.user_data['rfid'], data)
+
         self.scrollview.remove_widget(self.img_view)
         self.img_view = None
 
@@ -335,6 +342,10 @@ class ViewerScreen(Screen):
 
     def setSourcePath(self, path, *largs):
         self.src = path
+
+    def saveUserData(self, rfid, data):
+        if self.firebase:
+            self.firebase.update("users/"+rfid, data)
 
     def setUserData(self, user_data, *largs):
         self.user_data = user_data

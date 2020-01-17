@@ -31,7 +31,7 @@ class TestApp(App):
 		self.cleanInfoEvent = None
 		self.screen_manager = ScreenManager(transition=NoTransition())
 		self.home_screen = HomeScreen(name='home')
-		self.viewer_screen = ViewerScreen(name='viewer', saveFunc=self.saveUserData)
+		self.viewer_screen = ViewerScreen(name='viewer', firebase=self.firebase)
 		self.screen_manager.add_widget(self.home_screen)
 		self.screen_manager.add_widget(self.viewer_screen)
 
@@ -42,38 +42,21 @@ class TestApp(App):
 	def __del__(self):
 		self.rfidReader.stop()
 
-	def saveUserData(self, card_no, data):
-		self.firebase.update("users/"+card_no, data)
-
-	def getUserData(self, card_no):
+	def getUserData(self, rfid):
 		try:
-			user_data = self.firebase.get("users/"+card_no).val()
+			user_data = self.firebase.get("users/"+rfid).val()
 			return user_data
 		except Exception:
 			raise Exception("Nessuna connessione ad internet. Contatta la segreteria!")
 
-	def getUserRFID(self, user_data):
-		try:
-			if user_data: return user_data['rfid']
-			else: raise Exception('no user')
-		except Exception:
-			raise Exception("Utente non registrato. Chiedi informazioni in segreteria!")
-
 	def downloadUserFile(self, rfid, destination_path, filename_path):
-		system("mkdir -p %s" % destination_path)
-		system("rm -f %s/*" % destination_path)
-
 		try:
-			try:
-				node = self.firebase.getNode("users/"+rfid+"/scheda.zip")
-			except Exception as e:
-				raise e
-			try:
-				node.download(filename_path)
-			except Exception as e:
-				raise e
+			system("mkdir -p %s" % destination_path)
+			system("rm -f %s/*" % destination_path)
+			node = self.firebase.getNode("users/"+rfid+"/scheda.zip")
+			node.download(filename_path)
 		except Exception as e:
-			raise e#Exception("Impossibile scaricare file dal server. Contatta la segreteria!")
+			raise Exception("Impossibile scaricare file dal server. "+str(e))
 
 		self.extractUserFile(rfid, destination_path, filename_path)
 
@@ -94,28 +77,31 @@ class TestApp(App):
 		except Exception as e:
 			raise Exception("Impossibile creare il QR Code. Contatta la segreteria!")
 
-	def loadViewerScreen(self, card_no, *largs):
+	def loadViewerScreen(self, rfid, *largs):
 		try:
-			user_data = self.getUserData(card_no)
-			rfid = self.getUserRFID(user_data)
+			# try to download user data from firebase
+			user_data = self.getUserData(rfid)
+			# if user data is not found, raise exception
+			if not user_data: raise Exception("Utente non registrato. Chiedi informazioni in segreteria!")
+			
 			destination_path = "storage_data/"+rfid
+			# ex. filename_path: storage_data/0123456789/scheda_2019-12-28_02-06-09.zip
 			filename_path = '%s/%s' % (destination_path, user_data['file'])
-			fileExists = path.isfile(filename_path)
-			if not fileExists: self.downloadUserFile(rfid, destination_path, filename_path)
+			# if .zip file doesnt exist download from firebase, else check if hasnt been already unzipped (in case of SCP Secure Copy)
+			if not path.isfile(filename_path): self.downloadUserFile(rfid, destination_path, filename_path)
 			else:
 				schedaName_path = destination_path+'/scheda_0.jpg'
-				fileExists = path.isfile(schedaName_path)
-				if not fileExists: self.extractUserFile(rfid, destination_path, filename_path)
+				if not path.isfile(schedaName_path): self.extractUserFile(rfid, destination_path, filename_path)
 			self.viewer_screen.setUserData(user_data)
 			self.screen_manager.current = 'viewer'
 
 		except Exception as e:
 			self.showHint(str(e))
 
-	def handler(self, card_no):
+	def handler(self, rfid):
 		Clock.schedule_once(partial(self.home_screen.setHintMessage, "Carico scheda..."), -1)
 		self.screen_manager.current = 'home'
-		Clock.schedule_once(partial(self.loadViewerScreen, card_no), 0.1)
+		Clock.schedule_once(partial(self.loadViewerScreen, rfid), 0.1)
 
 	def showHint(self, text, timeout=6):
 		if self.cleanInfoEvent: Clock.unschedule(self.cleanInfoEvent)
