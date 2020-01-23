@@ -344,10 +344,8 @@ class ViewerScreen(Screen):
         self.src = path
 
     def saveUserData(self, rfid, data):
-        print("SAVING DATA...\n...\n")
         if self.firebase:
             self.firebase.update("users/"+rfid, data)
-        print("SAVED!")
 
     def setUserData(self, user_data, *largs):
         self.user_data = user_data

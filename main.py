@@ -51,16 +51,10 @@ class TestApp(App):
 
 	def downloadUserFile(self, rfid, destination_path, filename_path):
 		try:
-			print("CREATING FOLDERS...")
 			system("mkdir -p %s" % destination_path)
 			system("rm -f %s/*" % destination_path)
-			print("FOLDERS CREATED!")
-			print("FIREBASE NODE ACCESSING...")
 			node = self.firebase.getNode("users/"+rfid+"/scheda.zip")
-			print("NODE DONE!")
-			print("DOWNLOADING...")
 			node.download(filename_path)
-			print("DOWNLOADED!")
 		except Exception as e:
 			raise Exception("Impossibile scaricare file dal server. "+str(e))
 
@@ -84,12 +78,9 @@ class TestApp(App):
 			raise Exception("Impossibile creare il QR Code. Contatta la segreteria!")
 
 	def loadViewerScreen(self, rfid, *largs):
-		print("loadViewerScreen")
 		try:
 			# try to download user data from firebase
-			print("GETTING USER DATA...\n...\n")
 			user_data = self.getUserData(rfid)
-			print("DATA DOWNLOADED!")
 			# if user data is not found, raise exception
 			if not user_data: raise Exception("Utente non registrato. Chiedi informazioni in segreteria!")
 			
@@ -98,25 +89,18 @@ class TestApp(App):
 			filename_path = '%s/%s' % (destination_path, user_data['file'])
 			# if .zip file doesnt exist download from firebase, else check if hasnt been already unzipped (in case of SCP Secure Copy)
 			if not path.isfile(filename_path):
-				print("no file found")
 				self.downloadUserFile(rfid, destination_path, filename_path)
-				print("END downloadUserFile!")
 			else:
 				schedaName_path = destination_path+'/scheda_0.jpg'
 				if not path.isfile(schedaName_path):
-					print("not extracted... EXTRACTING...")
 					self.extractUserFile(rfid, destination_path, filename_path)
-					print("EXTRACTED")
-			print("setting user data...")
 			self.viewer_screen.setUserData(user_data)
-			print("setUserData")
 			self.screen_manager.current = 'viewer'
 
 		except Exception as e:
 			self.showHint(str(e))
 
 	def handler(self, rfid):
-		print("\n\nCarico scheda...")
 		Clock.schedule_once(partial(self.home_screen.setHintMessage, "Carico scheda..."), -1)
 		self.screen_manager.current = 'home'
 		Clock.schedule_once(partial(self.loadViewerScreen, rfid), 0.1)
