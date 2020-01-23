@@ -7,8 +7,7 @@ class Firebase:
             "apiKey": config['apiKey'],
             "authDomain": config['authDomain'],
             "databaseURL": config['databaseURL'],
-            "storageBucket": config['storageBucket'],
-            "serviceAccount": config['serviceAccount']
+            "storageBucket": config['storageBucket']
         }
 
         try:
