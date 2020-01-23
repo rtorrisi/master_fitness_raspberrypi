@@ -18,75 +18,52 @@ class Firebase:
         except Exception as e:
             print(e)
 
-    def checkConnection(self):
-        try:
-            response = urlopen('https://www.google.com/', timeout=3)
-            return True
-        except: 
-            return False
-
     def deleteFile(self, node, file_to_delete):
         try:
-            if self.checkConnection():
-                self.storage.delete(node+'/'+file_to_delete)
-                return True
-            else: raise Exception("No connection")
+            self.storage.delete(node+'/'+file_to_delete)
+            return True
         except Exception as e:
             print(e)
             return False
 
     def getNode(self, node):
-        if self.checkConnection():
-            return self.storage.child(node)
-        else: raise Exception("No connection")
+        return self.storage.child(node)
 
     def downloadFile(self, node, destination_path):
-        if self.checkConnection():
-            f = self.storage.child(node)
-            f.download(destination_path)
-        else: raise Exception("No connection")
+        f = self.storage.child(node)
+        f.download(destination_path)
 
     def uploadFile(self, node, source_path):
         try:
-            if self.checkConnection():
-                self.storage.child(node).put(source_path)
-                return True
-            else: raise Exception("No connection")
+            self.storage.child(node).put(source_path)
+            return True
         except Exception as e:
             print(e)
             return False
 
     def set(self, node, key, data):
         try:
-            if self.checkConnection():
-                self.database.child(node).child(key).set(data)
-                return True
-            else: raise Exception("No connection")
+            self.database.child(node).child(key).set(data)
+            return True
         except Exception as e:
             print(e)
             return False
             
     def get(self, node):
-        if self.checkConnection():
-            return self.database.child(node).get()
-        else: raise Exception("No connection")
+        return self.database.child(node).get()
 
     def remove(self, node):
         try:
-            if self.checkConnection():
-                self.database.child(node).remove()
-                return True
-            else: raise Exception("No connection")
+            self.database.child(node).remove()
+            return True
         except Exception as e:
             print(e)
             return False
 
     def update(self, node, data):
         try:
-            if self.checkConnection():
-                self.database.child(node).update(data)
-                return True
-            raise Exception("No connection")
+            self.database.child(node).update(data)
+            return True
         except Exception as e:
             print(e)
             return False
