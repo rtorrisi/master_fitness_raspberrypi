@@ -58,8 +58,6 @@ class TestApp(App):
 		except Exception as e:
 			raise Exception("Impossibile scaricare file dal server. "+str(e))
 
-		self.extractUserFile(rfid, destination_path, filename_path)
-
 	def extractUserFile(self, rfid, destination_path, filename_path):
 		try:
 			with zipfile.ZipFile(filename_path,"r") as zip_ref:
@@ -70,7 +68,8 @@ class TestApp(App):
 					zip_ref.extract(zip_info, destination_path)
 		except Exception:
 			raise Exception("Impossibile estrarre scheda dall'archivio. Contatta la segreteria!")
-		
+
+	def createQRCode(self, rfid, destination_path):
 		try:
 			qr = pyqrcode.create('https://firebasestorage.googleapis.com/v0/b/master-fitness.appspot.com/o/users%2F'+rfid+'%2Fscheda.pdf?alt=media')
 			qr.png(destination_path+'/qr_code.png', scale=4)
@@ -84,16 +83,19 @@ class TestApp(App):
 			# if user data is not found, raise exception
 			if not user_data: raise Exception("Utente non registrato. Chiedi informazioni in segreteria!")
 			
-			destination_path = "storage_data/"+rfid
 			# ex. filename_path: storage_data/0123456789/scheda_2019-12-28_02-06-09.zip
-			filename_path = '%s/%s' % (destination_path, user_data['file'])
-			# if .zip file doesnt exist download from firebase, else check if hasnt been already unzipped (in case of SCP Secure Copy)
+			destination_path = 'storage_data/'+rfid
+			filename_path = destination_path+'/'+user_data['file']
+			# if .zip file doesnt exist download from firebase
 			if not path.isfile(filename_path):
 				self.downloadUserFile(rfid, destination_path, filename_path)
-			else:
-				schedaName_path = destination_path+'/scheda_0.jpg'
-				if not path.isfile(schedaName_path):
-					self.extractUserFile(rfid, destination_path, filename_path)
+			
+			if not path.isfile(destination_path+'/scheda_0.jpg'):
+				self.extractUserFile(rfid, destination_path, filename_path)
+
+			if not path.isfile(destination_path+'/qr_code.png'):
+				self.createQRCode(rfid, destination_path)
+
 			self.viewer_screen.setUserData(user_data)
 			self.screen_manager.current = 'viewer'
 
