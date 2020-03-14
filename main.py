@@ -39,6 +39,9 @@ class TestApp(App):
 		self.rfidReader.start()
 		return self.screen_manager
 
+	def stop(self):
+		self.rfidReader.stop()
+
 	def __del__(self):
 		self.rfidReader.stop()
 
@@ -112,11 +115,19 @@ class TestApp(App):
 		self.home_screen.setHintMessage(text)
 		self.cleanInfoEvent = Clock.schedule_once(partial(self.home_screen.setHintMessage, ""), timeout)
 
+import RPi.GPIO as GPIO
+
 if __name__ == "__main__":
-	days = 60
-	seconds_per_day = 86400
-	seconds = days*seconds_per_day
-	deleteOldFolders('storage_data', seconds)
-	TestApp().run()
+	try:
+		days = 60
+		seconds_per_day = 86400
+		seconds = days*seconds_per_day
+		deleteOldFolders('storage_data', seconds)
+		app = TestApp()
+		app.run()
+	except KeyboardInterrupt:
+		print("Keyboard Interrupt!")
+	finally:
+		app.stop()
 
 #system("convert -density 140 "+destination_path+"/scheda.pdf -quality 50 "+destination_path+"/scheda_%01d.jpg")
