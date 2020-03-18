@@ -289,14 +289,19 @@ class ViewerScreen(Screen):
         self._popup = Popup(title="Scansiona il QR Code", content=content, size_hint=(None, None), width=250, height=300)
         self._popup.open()
 
-    def on_release_left_button(self, instance):
+    def changePage(self, new_page):
         self.reschedule()
-        page=self.page-1
-        if path.isfile("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(page)+".jpg"):
-            self.page=page
+        if path.isfile("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(new_page)+".jpg"):
+            self.page=new_page
             self.labelPage.text=str(self.page+1)+"/"+str(self.num_pages)
             self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(self.page)+".jpg")
             self.slider_value = 1
+
+    def on_release_left_button(self, instance):
+        self.changePage(new_page=self.page-1)
+
+    def on_release_right_button(self, instance):
+        self.changePage(new_page=self.page+1)
 
     def on_img_hint_update(self, instance, value):
         scroll_x = self.scrollview.scroll_x
@@ -316,15 +321,6 @@ class ViewerScreen(Screen):
             if self.img_view:
                 self.img_view.size_hint = (self.img_view.size_hint_x * 1.2, self.img_view.size_hint_y * 1.2)
                 self.img_view.width = 0
-
-    def on_release_right_button(self, instance):
-        self.reschedule()
-        page=self.page+1
-        if path.isfile("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(page)+".jpg"):
-            self.page=page
-            self.labelPage.text=str(self.page+1)+"/"+str(self.num_pages)
-            self.setSourcePath("storage_data/"+str(self.user_data['rfid'])+"/scheda_"+str(self.page)+".jpg")
-            self.slider_value = 1
 
     def on_src(self, instance, value):
         if self.img_view:

@@ -2,6 +2,7 @@ __pycache__/
 .vscode/
 *.py[cod]
 
+output
 config_file.txt
 app_data/serviceAccount.json
 storage_data/*
